@@ -3,216 +3,297 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>پنل مدیریت نوبت‌دهی کلینیک</title>
+  <title>سیستم مدیریت هوشمند کلینیک زیبایی</title>
   
+  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   
-  <!-- کتابخانه اختصاصی Supabase -->
+  <!-- Supabase CDN Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- تقویم و کتابخانه‌های مورد نیاز -->
+  <!-- Persian Datepicker & Dependencies -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"/>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+  <!-- Font Vazirmatn -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
 
   <style>
-    body { font-family: 'Vazirmatn', sans-serif; font-size: 13px; }
-    .panel-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05); }
-    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    body { 
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif; 
+      background: #080c14;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
     
-    /* استایل چک‌باکس‌های تیک‌خوردنی */
+    .ambient-glow {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1100px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.16) 0%, rgba(236, 72, 153, 0.08) 45%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glass-surface {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(12px);
+    }
+
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    
     .service-chip input[type="checkbox"] { display: none; }
     .service-chip input[type="checkbox"]:checked + label {
-      background-color: #4f46e5;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
       color: #ffffff;
-      border-color: #4338ca;
-      font-weight: 600;
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .status-pending-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(180, 83, 9, 0.05) 100%) !important;
+      border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    }
+    .status-completed-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(5, 150, 105, 0.06) 100%) !important;
+      border: 1px solid rgba(16, 185, 129, 0.45) !important;
+    }
+    .status-cancelled-card {
+      background: rgba(239, 68, 68, 0.06) !important;
+      border: 1px solid rgba(239, 68, 68, 0.25) !important;
+      opacity: 0.6;
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-700 min-h-screen p-3 md:p-5">
+<body class="p-3 md:p-8 antialiased relative">
+  
+  <div class="ambient-glow"></div>
 
-  <div class="max-w-[1400px] mx-auto space-y-4">
+  <div class="max-w-[1300px] mx-auto space-y-6 relative z-10">
 
-    <!-- هدر -->
-    <header class="panel-card rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 border-r-4 border-r-indigo-600">
-      <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-          <i data-lucide="calendar-range" class="w-4 h-4"></i>
+    <!-- نوار هدر -->
+    <header class="glass-surface rounded-3xl p-4 md:p-5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/25">
+          <i data-lucide="sparkles" class="w-6 h-6"></i>
         </div>
         <div>
-          <h1 class="text-sm font-bold text-slate-900 leading-tight">پنل مدیریت نوبت‌دهی کلینیک لیزر</h1>
-          <p class="text-[11px] text-slate-400" id="syncStatus">در حال برقراری ارتباط با دیتابیس...</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base md:text-lg font-black text-white tracking-wide">کلینیک تخصصی لیزر و زیبایی</h1>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400 animate-pulse"></span>
+            <span class="text-xs text-slate-400 font-medium" id="syncStatus">در حال برقراری ارتباط...</span>
+          </div>
         </div>
       </div>
 
-      <div class="flex items-center gap-2.5">
-        <button onclick="exportToStyledExcel()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition">
-          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
-          خروجی اکسل آفلاین
+      <div class="flex items-center gap-3">
+        <button onclick="openModal()" class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-95 text-white text-xs font-black rounded-2xl flex items-center gap-2 transition shadow-lg shadow-purple-500/25 active:scale-95">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          ثبت نوبت جدید
         </button>
 
-        <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg text-slate-700 border border-slate-200/60">
-          <span id="liveDate" class="text-xs font-semibold">--</span>
-          <span class="text-slate-300">|</span>
-          <span id="liveClock" class="text-xs font-mono font-bold text-indigo-600">--</span>
+        <button onclick="exportToStyledExcel()" class="px-4 py-2.5 glass-pill hover:bg-white/10 text-slate-200 text-xs font-bold rounded-2xl flex items-center gap-2 transition">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+          خروجی اکسل
+        </button>
+
+        <div class="hidden sm:flex items-center gap-3 glass-pill px-4 py-2.5 rounded-2xl text-slate-300">
+          <span id="liveDate" class="text-xs font-bold">--</span>
+          <span class="text-white/20">|</span>
+          <span id="liveClock" class="text-xs font-mono font-black text-indigo-400">--</span>
         </div>
       </div>
     </header>
 
-    <!-- بخش اصلی -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-
-      <!-- ستون فرم ثبت نوبت -->
-      <div class="lg:col-span-4">
-        <div class="panel-card rounded-xl p-4 sticky top-4">
-          <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-100">
-            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i>
-              ثبت نوبت جدید
-            </span>
-            <span class="text-[10px] text-rose-500 font-medium">* الزامی</span>
-          </div>
-
-          <form id="appointmentForm" class="space-y-3">
-            
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">
-                نام و نام خانوادگی <span class="text-rose-500">*</span>
-              </label>
-              <input type="text" id="clientFullName" placeholder="مثلاً: سارا محمدی" list="nameSuggestions" autocomplete="off"
-                class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none transition bg-white">
-              <datalist id="nameSuggestions"></datalist>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">
-                شماره تماس <span class="text-rose-500">*</span>
-              </label>
-              <input type="tel" id="clientPhone" placeholder="09123456789" list="phoneSuggestions" autocomplete="off"
-                class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none transition bg-white">
-              <datalist id="phoneSuggestions"></datalist>
-            </div>
-
-            <!-- خدمات چند انتخابی (چک باکس) -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1.5">
-                ناحیه‌های خدمت (امکان انتخاب چندگانه) <span class="text-rose-500">*</span>
-              </label>
-              <div class="flex flex-wrap gap-1.5 p-2 bg-slate-50 border border-slate-200/80 rounded-lg max-h-36 overflow-y-auto">
-                <div class="service-chip"><input type="checkbox" id="srv_full" value="فول بادی"><label for="srv_full" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">فول بادی</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_face" value="صورت"><label for="srv_face" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">صورت</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_lip" value="پشت لب"><label for="srv_lip" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">پشت لب</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_chin" value="چانه"><label for="srv_chin" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">چانه</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_armpit" value="زیر بغل"><label for="srv_armpit" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">زیر بغل</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_fullarm" value="کل دست"><label for="srv_fullarm" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">کل دست</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_forearm" value="ساعد"><label for="srv_forearm" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">ساعد</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_stomach" value="شکم"><label for="srv_stomach" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">شکم</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_navel" value="خط ناف"><label for="srv_navel" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">خط ناف</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_bikini" value="بیکینی"><label for="srv_bikini" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">بیکینی</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_buttline" value="خط باسن"><label for="srv_buttline" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">خط باسن</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_butt" value="باسن"><label for="srv_butt" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">باسن</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_back" value="کمر"><label for="srv_back" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">کمر</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_thigh" value="ران"><label for="srv_thigh" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">ران</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_fullleg" value="کل پا"><label for="srv_fullleg" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">کل پا</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_shin" value="ساق"><label for="srv_shin" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">ساق</label></div>
-                <div class="service-chip"><input type="checkbox" id="srv_co2" value="CO2"><label for="srv_co2" class="px-2 py-1 bg-white border border-slate-200 rounded text-[11px] cursor-pointer inline-block hover:border-indigo-300 transition">CO2</label></div>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">
-                تاریخ نوبت (شمسی) <span class="text-rose-500">*</span>
-              </label>
-              <input type="text" id="appointmentDate" placeholder="۱۴۰۵/۰۶/۰۸" autocomplete="off" readonly
-                class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none transition bg-white cursor-pointer">
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">
-                  ساعت حضور <span class="text-rose-500">*</span>
-                </label>
-                <div dir="ltr" class="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2 py-1 focus-within:ring-1 focus-within:ring-indigo-500">
-                  <input type="number" id="inputHour" min="0" max="23" placeholder="00"
-                    class="w-10 text-center text-xs font-bold text-slate-800 outline-none">
-                  <span class="text-slate-300 font-bold">:</span>
-                  <input type="number" id="inputMin" min="0" max="59" placeholder="00"
-                    class="w-10 text-center text-xs font-bold text-slate-800 outline-none">
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">مدت زمان</label>
-                <select id="duration" class="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none bg-white">
-                  <option value="20">۲۰ دقیقه</option>
-                  <option value="30">۳۰ دقیقه</option>
-                  <option value="45">۴۵ دقیقه</option>
-                  <option value="60" selected>۱ ساعت</option>
-                  <option value="90">۱.۵ ساعت</option>
-                  <option value="120">۲ ساعت</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">مبلغ خدمت (تومان)</label>
-              <input type="number" id="servicePrice" placeholder="مثلاً: 650000"
-                class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none transition">
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">توضیحات</label>
-              <input type="text" id="appointmentNotes" placeholder="نکات اختیاری..."
-                class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none transition">
-            </div>
-
-            <div id="validationAlert" class="hidden p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] flex items-center gap-1.5">
-              <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i>
-              <span id="validationMessage">خطا</span>
-            </div>
-
-            <button type="submit" id="submitBtn" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
-              <i data-lucide="check" class="w-3.5 h-3.5"></i>
-              ثبت و ذخیره نوبت
-            </button>
-          </form>
+    <!-- کارت‌های آمار -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div class="glass-surface p-4 rounded-2xl border-t-2 border-t-indigo-500/60">
+        <div class="flex items-center justify-between text-slate-400 text-xs">
+          <span>کل نوبت‌ها</span>
+          <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
         </div>
+        <p class="text-2xl font-black text-white mt-2" id="statTotalApps">۰</p>
       </div>
 
-      <!-- ستون تقویم هفتگی -->
-      <div class="lg:col-span-8">
-        <div class="panel-card rounded-xl p-4 space-y-3">
-          
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
-            <div class="flex items-center gap-1.5">
-              <button id="prevWeekBtn" class="p-1 rounded-md border border-slate-200 hover:bg-slate-50 transition text-slate-600" title="هفته قبل">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-              </button>
-              <button id="todayBtn" class="px-2.5 py-1 rounded-md border border-slate-200 text-[11px] font-medium hover:bg-slate-50 transition text-slate-700">
-                امروز
-              </button>
-              <button id="nextWeekBtn" class="p-1 rounded-md border border-slate-200 hover:bg-slate-50 transition text-slate-600" title="هفته بعد">
-                <i data-lucide="chevron-left" class="w-4 h-4"></i>
-              </button>
-
-              <input type="text" id="jumpDatePicker" placeholder="📅 پرش به تاریخ..." autocomplete="off" readonly
-                class="px-2 py-1 rounded-md border border-slate-200 bg-slate-50 text-slate-600 text-[11px] cursor-pointer hover:bg-slate-100 transition outline-none w-28 text-center">
-            </div>
-            
-            <div id="weekRangeDisplay" class="text-xs font-bold text-slate-800">--</div>
-          </div>
-
-          <div id="weekCalendarContainer" class="flex flex-col gap-2.5"></div>
-
+      <div class="glass-surface p-4 rounded-2xl border-t-2 border-t-amber-500/60">
+        <div class="flex items-center justify-between text-amber-400 text-xs">
+          <span>در انتظار حضور</span>
+          <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
         </div>
+        <p class="text-2xl font-black text-amber-300 mt-2" id="statPendingApps">۰</p>
       </div>
 
+      <div class="glass-surface p-4 rounded-2xl border-t-2 border-t-emerald-500/60">
+        <div class="flex items-center justify-between text-emerald-400 text-xs">
+          <span>خدمات انجام‌شده</span>
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <p class="text-2xl font-black text-emerald-300 mt-2" id="statCompletedApps">۰</p>
+      </div>
+
+      <div class="glass-surface p-4 rounded-2xl border-t-2 border-t-purple-500/60">
+        <div class="flex items-center justify-between text-purple-400 text-xs">
+          <span>درآمد کل</span>
+          <i data-lucide="wallet" class="w-4 h-4 text-purple-400"></i>
+        </div>
+        <p class="text-base font-black text-purple-300 mt-2" id="statTotalIncome">۰ تومان</p>
+      </div>
+    </div>
+
+    <!-- تقویم هفتگی -->
+    <div class="glass-surface rounded-3xl p-5 md:p-7 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-white/5">
+        <div class="flex items-center gap-2">
+          <button id="prevWeekBtn" class="p-2.5 glass-pill hover:bg-white/10 rounded-2xl text-slate-300 transition" title="هفته قبل">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+          <button id="todayBtn" class="px-4 py-2 glass-pill hover:bg-white/10 rounded-2xl text-xs font-bold text-white transition">
+            امروز
+          </button>
+          <button id="nextWeekBtn" class="p-2.5 glass-pill hover:bg-white/10 rounded-2xl text-slate-300 transition" title="هفته بعد">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </button>
+
+          <input type="text" id="jumpDatePicker" placeholder="📅 پرش به تاریخ..." autocomplete="off" readonly
+            class="px-3.5 py-2 glass-pill text-white text-xs font-bold cursor-pointer rounded-2xl outline-none w-32 text-center hover:bg-white/10 transition">
+        </div>
+
+        <div id="weekRangeDisplay" class="text-xs font-black text-indigo-300 glass-pill px-4 py-2 rounded-2xl">--</div>
+      </div>
+
+      <div id="weekCalendarContainer" class="flex flex-col gap-2.5"></div>
+    </div>
+
+  </div>
+
+  <!-- پنجره مودال ثبت نوبت -->
+  <div id="appointmentModal" class="fixed inset-0 bg-black/75 backdrop-blur-md hidden items-center justify-center z-50 p-4 transition-all duration-300">
+    <div class="glass-surface max-w-xl w-full rounded-3xl p-6 border border-white/15 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h2 class="text-sm font-black text-white flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4 text-purple-400"></i>
+          پذیرش و رزرو نوبت جدید
+        </h2>
+        <button onclick="closeModal()" class="p-1 text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="appointmentForm" class="space-y-3.5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">نام و نام خانوادگی مراجع <span class="text-rose-400">*</span></label>
+            <input type="text" id="clientFullName" placeholder="سارا محمدی" list="nameSuggestions" autocomplete="off"
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-xs text-white focus:ring-2 focus:ring-purple-500 outline-none">
+            <datalist id="nameSuggestions"></datalist>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">شماره موبایل <span class="text-rose-400">*</span></label>
+            <input type="tel" id="clientPhone" placeholder="09123456789" list="phoneSuggestions" autocomplete="off"
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-xs text-white focus:ring-2 focus:ring-purple-500 outline-none font-mono">
+            <datalist id="phoneSuggestions"></datalist>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">انتخاب ناحیه‌های خدمت (امکان چند انتخاب) <span class="text-rose-400">*</span></label>
+          <div class="flex flex-wrap gap-1.5 p-2.5 bg-white/5 border border-white/10 rounded-2xl max-h-36 overflow-y-auto">
+            <div class="service-chip"><input type="checkbox" id="srv_full" value="فول بادی"><label for="srv_full" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">فول بادی</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_face" value="صورت"><label for="srv_face" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">صورت</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_lip" value="پشت لب"><label for="srv_lip" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">پشت لب</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_chin" value="چانه"><label for="srv_chin" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">چانه</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_armpit" value="زیر بغل"><label for="srv_armpit" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">زیر بغل</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_fullarm" value="کل دست"><label for="srv_fullarm" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">کل دست</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_forearm" value="ساعد"><label for="srv_forearm" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">ساعد</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_stomach" value="شکم"><label for="srv_stomach" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">شکم</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_navel" value="خط ناف"><label for="srv_navel" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">خط ناف</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_bikini" value="بیکینی"><label for="srv_bikini" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">بیکینی</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_buttline" value="خط باسن"><label for="srv_buttline" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">خط باسن</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_butt" value="باسن"><label for="srv_butt" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">باسن</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_back" value="کمر"><label for="srv_back" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">کمر</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_thigh" value="ران"><label for="srv_thigh" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">ران</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_fullleg" value="کل پا"><label for="srv_fullleg" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">کل پا</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_shin" value="ساق"><label for="srv_shin" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">ساق</label></div>
+            <div class="service-chip"><input type="checkbox" id="srv_co2" value="CO2"><label for="srv_co2" class="px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl text-[11px] cursor-pointer inline-block text-slate-300 font-medium">CO2</label></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">تاریخ نوبت <span class="text-rose-400">*</span></label>
+            <input type="text" id="appointmentDate" placeholder="۱۴۰۵/۰۶/۰۸" autocomplete="off" readonly
+              class="w-full px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs text-white cursor-pointer font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">ساعت شروع <span class="text-rose-400">*</span></label>
+            <div dir="ltr" class="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-3 py-2">
+              <input type="number" id="inputHour" min="0" max="23" placeholder="00" class="w-10 text-center text-xs font-black text-white bg-transparent outline-none">
+              <span class="text-white/30 font-bold">:</span>
+              <input type="number" id="inputMin" min="0" max="59" placeholder="00" class="w-10 text-center text-xs font-black text-white bg-transparent outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">مدت زمان</label>
+            <select id="duration" class="w-full px-3 py-2 rounded-2xl bg-slate-900 border border-white/10 text-xs text-white outline-none">
+              <option value="20">۲۰ دقیقه</option>
+              <option value="30">۳۰ دقیقه</option>
+              <option value="45">۴۵ دقیقه</option>
+              <option value="60" selected>۱ ساعت</option>
+              <option value="90">۱.۵ ساعت</option>
+              <option value="120">۲ ساعت</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">مبلغ خدمت (تومان)</label>
+            <input type="number" id="servicePrice" placeholder="مثلاً: 650000"
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-xs text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">یادداشت پرونده</label>
+            <input type="text" id="appointmentNotes" placeholder="نکات اختیاری..."
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-xs text-white">
+          </div>
+        </div>
+
+        <div id="validationAlert" class="hidden p-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+          <span id="validationMessage">خطا</span>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button type="submit" class="flex-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-black py-3 rounded-2xl text-xs transition shadow-lg shadow-purple-500/30 active:scale-95">
+            ثبت و ذخیره قطعی
+          </button>
+          <button type="button" onclick="closeModal()" class="px-5 py-3 glass-pill text-slate-300 rounded-2xl text-xs hover:bg-white/10 transition">
+            انصراف
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -231,6 +312,17 @@
       return str.toString()
         .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
         .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    }
+
+    function openModal(defaultDate = null) {
+      if (defaultDate) {
+        $('#appointmentDate').val(defaultDate);
+      }
+      $('#appointmentModal').removeClass('hidden').addClass('flex');
+    }
+
+    function closeModal() {
+      $('#appointmentModal').addClass('hidden').removeClass('flex');
     }
 
     $(document).ready(function() {
@@ -268,7 +360,7 @@
     });
 
     async function fetchFromDatabase() {
-      $('#syncStatus').text('🔄 در حال همگام‌سازی با دیتابیس ابری...');
+      $('#syncStatus').text('در حال دریافت داده‌ها...');
       try {
         const { data, error } = await supabaseClient
           .from('appointments')
@@ -290,21 +382,30 @@
           notes: row.notes
         }));
 
-        // پر کردن لیست مشتریان برای autocomplete از کل دیتابیس
         clients = {};
         appointments.forEach(a => {
-          if (a.phone && a.clientName) {
-            clients[a.phone.trim()] = a.clientName.trim();
-          }
+          if (a.phone && a.clientName) clients[a.phone.trim()] = a.clientName.trim();
         });
 
+        updateStatistics();
         setupAutocomplete();
         renderWeekCalendar();
-        $('#syncStatus').text('🟢 متصل به دیتابیس امن Supabase');
+        $('#syncStatus').text('پایگاه داده آنلاین و آماده');
       } catch (err) {
-        $('#syncStatus').text('❌ خطا در بارگذاری داده‌ها');
-        console.error('Supabase Error:', err);
+        $('#syncStatus').text('خطا در ارتباط با سرور');
       }
+    }
+
+    function updateStatistics() {
+      $('#statTotalApps').text(appointments.length);
+      const pending = appointments.filter(a => a.status === 'pending').length;
+      const completed = appointments.filter(a => a.status === 'completed').length;
+      let income = 0;
+      appointments.filter(a => a.status === 'completed').forEach(a => { income += (a.price || 0); });
+
+      $('#statPendingApps').text(pending);
+      $('#statCompletedApps').text(completed);
+      $('#statTotalIncome').text(income.toLocaleString() + ' تومان');
     }
 
     function initLiveDateTime() {
@@ -330,20 +431,23 @@
         }
       });
 
-      // اتصال خودکار دوطرفه نام و شماره تلفن از دیتابیس
       $('#clientFullName').on('input change', function() {
         const name = $(this).val().trim();
         const foundPhone = Object.keys(clients).find(phone => clients[phone] === name);
-        if (foundPhone) {
-          $('#clientPhone').val(foundPhone);
-        }
+        if (foundPhone) $('#clientPhone').val(foundPhone);
       });
 
       $('#clientPhone').on('input change', function() {
         const phone = $(this).val().trim();
-        if (clients[phone]) {
-          $('#clientFullName').val(clients[phone]);
-        }
+        if (clients[phone]) $('#clientFullName').val(clients[phone]);
+      });
+
+      $('#appointmentModal').on('click', function(e) {
+        if (e.target === this) closeModal();
+      });
+
+      $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
       });
     }
 
@@ -385,7 +489,6 @@
       const phone = $('#clientPhone').val().trim();
       const fullName = $('#clientFullName').val().trim();
       
-      // دریافت تمام گزینه‌های تیک‌خورده
       const selectedServices = [];
       $('.service-chip input[type="checkbox"]:checked').each(function() {
         selectedServices.push($(this).val());
@@ -401,7 +504,7 @@
       const notes = $('#appointmentNotes').val().trim();
 
       if (!fullName || !phone || selectedServices.length === 0 || !date || hourVal === '' || minVal === '') {
-        $('#validationMessage').text('لطفاً تمامی فیلدهای ستاره‌دار و حداقل یک ناحیه خدمت را انتخاب کنید.');
+        $('#validationMessage').text('لطفاً تمامی فیلدهای الزامی و حداقل یک ناحیه خدمت را انتخاب کنید.');
         $('#validationAlert').removeClass('hidden');
         return;
       }
@@ -411,7 +514,7 @@
       const time = `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m}`;
 
       if (checkConflict(date, time, duration)) {
-        $('#validationMessage').text(`تداخل نوبت! در تاریخ ${date} از ساعت ${time} بازه زمانی انتخابی پر است.`);
+        $('#validationMessage').text(`تداخل زمانی! در تاریخ ${date} از ساعت ${time} این نوبت پر است.`);
         $('#validationAlert').removeClass('hidden');
         return;
       }
@@ -430,24 +533,20 @@
         notes: notes
       };
 
-      $('#syncStatus').text('🔄 در حال ذخیره در دیتابیس...');
+      $('#syncStatus').text('در حال ذخیره...');
       
       const { error } = await supabaseClient
         .from('appointments')
         .insert([newAppointment]);
 
       if (error) {
-        alert('خطا در ذخیره دیتابیس: ' + error.message);
-        $('#syncStatus').text('❌ خطا در ذخیره');
+        alert('خطا در ذخیره: ' + error.message);
         return;
       }
 
       $('#appointmentForm')[0].reset();
       $('.service-chip input[type="checkbox"]').prop('checked', false);
-      $('#appointmentDate').pDatepicker('setDate', new persianDate().valueOf());
-      $('#inputHour').val(h < 10 ? '0' + h : h);
-      $('#inputMin').val('00');
-
+      closeModal();
       fetchFromDatabase();
     }
 
@@ -463,7 +562,7 @@
     };
 
     window.deleteAppointment = async function(id) {
-      if (confirm('آیا این نوبت برای همیشه حذف شود؟')) {
+      if (confirm('آیا از حذف این نوبت اطمینان دارید؟')) {
         const { error } = await supabaseClient
           .from('appointments')
           .delete()
@@ -476,7 +575,7 @@
     };
 
     window.toggleDetails = function(id) {
-      $(`#details_${id}`).toggleClass('hidden');
+      $(`#details_${id}`).slideToggle(180);
     };
 
     window.exportToStyledExcel = function() {
@@ -552,72 +651,97 @@
           .filter(a => toEnDigits(a.date) === formattedDate)
           .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
 
+        const hasAppointments = dayAppointments.length > 0;
+
         let cardsHtml = '';
         dayAppointments.forEach(app => {
-          let statusStyle = 'bg-amber-50/90 border-amber-200 text-amber-900';
-          let badgeText = 'در انتظار';
-          let badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+          let cardClass = 'status-pending-card';
+          let badgeText = 'در انتظار حضور';
+          let badgeColor = 'text-amber-300 bg-amber-400/20';
 
           if (app.status === 'completed') {
-            statusStyle = 'bg-emerald-50/90 border-emerald-200 text-emerald-900';
+            cardClass = 'status-completed-card';
             badgeText = 'انجام شد';
-            badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300 font-medium';
+            badgeColor = 'text-emerald-300 bg-emerald-400/20';
           } else if (app.status === 'cancelled') {
-            statusStyle = 'bg-rose-50/90 border-rose-200 text-rose-950 border-2';
+            cardClass = 'status-cancelled-card';
             badgeText = 'لغو شد';
-            badgeClass = 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
+            badgeColor = 'text-rose-300 bg-rose-400/20';
           }
 
           cardsHtml += `
-            <div class="flex flex-col rounded-lg border ${statusStyle} shadow-xs text-xs overflow-hidden transition">
-              <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-white/70">
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-xs">${app.time}</span>
-                  <span class="font-bold text-slate-900">${app.clientName}</span>
-                  <span class="text-[11px] text-slate-500 font-mono">(${app.phone})</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded border ${badgeClass}">${badgeText}</span>
+            <div class="${cardClass} rounded-2xl p-3.5 transition-all text-xs">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-3">
+                  <span class="font-mono text-xs font-black bg-black/40 text-white px-3 py-1 rounded-xl border border-white/10">${app.time}</span>
+                  <span class="font-black text-sm text-white">${app.clientName}</span>
+                  <span class="text-xs font-mono text-slate-400">${app.phone}</span>
+                  <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${badgeColor}">${badgeText}</span>
                   
-                  <button onclick="toggleDetails('${app.id}')" class="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[11px] font-semibold transition">
-                    🔍 جزئیات
+                  <button onclick="toggleDetails('${app.id}')" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-indigo-300 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <i data-lucide="info" class="w-3.5 h-3.5"></i> جزئیات
                   </button>
                 </div>
 
-                <div class="flex items-center gap-1">
-                  <button onclick="changeStatus('${app.id}', 'pending')" title="در انتظار" class="px-2 py-0.5 bg-white hover:bg-amber-100 border border-amber-200 rounded text-[11px] text-amber-800 transition">⏳ انتظار</button>
-                  <button onclick="changeStatus('${app.id}', 'completed')" title="انجام شد" class="px-2 py-0.5 bg-white hover:bg-emerald-100 border border-emerald-200 rounded text-[11px] text-emerald-800 transition">✔️ انجام</button>
-                  <button onclick="changeStatus('${app.id}', 'cancelled')" title="لغو نوبت" class="px-2 py-0.5 bg-white hover:bg-rose-100 border border-rose-200 rounded text-[11px] text-rose-800 transition">✖️ لغو</button>
-                  <button onclick="deleteAppointment('${app.id}')" title="حذف نوبت" class="p-1 text-rose-600 hover:bg-rose-100 rounded transition mr-0.5">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="changeStatus('${app.id}', 'pending')" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold transition">⏳ انتظار</button>
+                  <button onclick="changeStatus('${app.id}', 'completed')" class="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold transition">✔️ انجام</button>
+                  <button onclick="changeStatus('${app.id}', 'cancelled')" class="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold transition">✖️ لغو</button>
+                  <button onclick="deleteAppointment('${app.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
                   </button>
                 </div>
               </div>
 
-              <div id="details_${app.id}" class="hidden px-3 py-2 bg-slate-50/90 border-t border-slate-200/80 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-700">
-                <div><span class="font-semibold text-slate-500">ناحیه خدمت:</span> <span class="font-bold text-indigo-700">${app.service}</span></div>
-                <div><span class="font-semibold text-slate-500">مدت زمان:</span> <span class="font-medium text-slate-800">${app.duration} دقیقه</span></div>
-                <div><span class="font-semibold text-slate-500">مبلغ خدمت:</span> <span class="font-bold text-emerald-700">${app.price ? Number(app.price).toLocaleString() + ' تومان' : 'ثبت نشده'}</span></div>
-                ${app.notes ? `<div class="w-full text-slate-600 italic bg-white p-1 rounded border border-slate-200 mt-0.5">نکات: ${app.notes}</div>` : ''}
+              <div id="details_${app.id}" class="hidden mt-3 pt-3 border-t border-white/10 text-xs text-slate-300 space-y-1.5">
+                <div class="flex flex-wrap gap-4">
+                  <div><span class="text-slate-400">ناحیه خدمت:</span> <span class="text-indigo-300 font-bold">${app.service}</span></div>
+                  <div><span class="text-slate-400">مدت زمان:</span> <span class="text-white font-bold">${app.duration} دقیقه</span></div>
+                  <div><span class="text-slate-400">مبلغ:</span> <span class="text-emerald-400 font-black font-mono">${app.price ? Number(app.price).toLocaleString() + ' تومان' : 'ثبت نشده'}</span></div>
+                </div>
+                ${app.notes ? `<div class="bg-black/30 p-2 rounded-xl border border-white/5 text-slate-300 mt-1">نکات پرونده: ${app.notes}</div>` : ''}
               </div>
             </div>
           `;
         });
 
-        const rowHtml = `
-          <div class="flex flex-col md:flex-row items-stretch gap-2 p-2.5 rounded-xl border ${isToday ? 'border-indigo-400 bg-indigo-50/20 ring-1 ring-indigo-300' : 'border-slate-200/80 bg-white'} shadow-xs">
-            <div class="flex md:flex-col items-center justify-between md:justify-center p-2 rounded-lg ${isToday ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} md:w-32 shrink-0 text-center">
-              <span class="font-bold text-xs">${day.format('dddd')}</span>
-              <span class="text-[10px] opacity-85">${day.format('DD MMMM')}</span>
-              
-              <span class="text-[10px] mt-1 px-2 py-0.5 rounded-full font-bold ${isToday ? 'bg-indigo-700 text-indigo-100' : (dayAppointments.length > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-white text-slate-400 border border-slate-200')}">
-                ${dayAppointments.length} نوبت
-              </span>
-            </div>
+        let rowHtml = '';
+        if (hasAppointments) {
+          rowHtml = `
+            <div class="glass-surface p-3.5 rounded-3xl flex flex-col md:flex-row items-stretch gap-3.5 ${isToday ? 'ring-2 ring-indigo-500/60 bg-indigo-950/20' : ''}">
+              <div class="flex md:flex-col items-center justify-between md:justify-center p-3 rounded-2xl ${isToday ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-white/5 text-slate-300'} md:w-32 shrink-0 text-center">
+                <span class="font-black text-xs">${day.format('dddd')}</span>
+                <span class="text-[11px] opacity-80 mt-0.5">${day.format('DD MMMM')}</span>
+                
+                <span class="text-[10px] mt-2 px-2.5 py-0.5 rounded-full font-black ${isToday ? 'bg-white/20 text-white' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'}">
+                  ${dayAppointments.length} نوبت
+                </span>
+              </div>
 
-            <div class="flex-1 flex flex-col gap-1.5 justify-center">
-              ${cardsHtml || '<div class="text-[11px] text-slate-400 py-1 px-2">هیچ نوبتی برای این روز ثبت نشده است.</div>'}
+              <div class="flex-1 flex flex-col gap-2 justify-center">
+                ${cardsHtml}
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        } else {
+          rowHtml = `
+            <div class="glass-pill p-2 px-3.5 rounded-2xl flex items-center justify-between gap-3 opacity-65 hover:opacity-100 transition-all ${isToday ? 'ring-1 ring-indigo-500/40 opacity-90' : ''}">
+              <div class="flex items-center gap-3">
+                <span class="w-1.5 h-1.5 rounded-full ${isToday ? 'bg-indigo-400 animate-ping' : 'bg-slate-600'}"></span>
+                <span class="font-bold text-xs text-slate-300">${day.format('dddd')}</span>
+                <span class="text-[11px] text-slate-500 font-mono">${day.format('DD MMMM')}</span>
+                ${isToday ? '<span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">امروز</span>' : ''}
+              </div>
+
+              <div class="flex items-center gap-3">
+                <span class="text-[11px] text-slate-500 hidden sm:inline">نوبتی ثبت نشده</span>
+                <button onclick="openModal('${formattedDate}')" class="px-2.5 py-1 bg-white/5 hover:bg-white/15 text-slate-300 text-[11px] font-bold rounded-xl border border-white/10 transition flex items-center gap-1">
+                  <i data-lucide="plus" class="w-3 h-3"></i> رزرو نوبت
+                </button>
+              </div>
+            </div>
+          `;
+        }
 
         container.append(rowHtml);
       });
